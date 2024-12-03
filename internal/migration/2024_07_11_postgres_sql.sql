@@ -29,7 +29,8 @@ CREATE TABLE public.book_stocks (
     code character varying(50) NOT NULL,
     status character varying(50) NOT NULL,
     borrower_id character varying(36),
-    borrowed_at timestamp(6) without time zone
+    borrowed_at timestamp(6) without time zone,
+    returned_at timestamp(6) without time zone
 );
 
 

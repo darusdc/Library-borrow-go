@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/darusdc/belajar-go/domain"
@@ -61,14 +62,10 @@ func (b *bookServices) Delete(context context.Context, id string) error {
 		return errors.New("id isn't exist")
 	}
 
-	res, err := b.bookStocksRepository.FindByBookId(context, id)
+	_, err = b.bookStocksRepository.FindByBookId(context, existed.Id)
 
 	if err != nil {
 		return err
-	}
-
-	if len(res) <= 0 {
-		return errors.New("id isn't exist")
 	}
 
 	if err := b.bookStocksRepository.DeleteByBookId(context, existed.Id); err != nil {
@@ -83,6 +80,7 @@ func (b *bookServices) Index(context context.Context) ([]dto.BookData, error) {
 	books, err := b.bookRepository.FindAll(context)
 
 	if err != nil {
+		fmt.Println(err.Error())
 		return nil, err
 	}
 

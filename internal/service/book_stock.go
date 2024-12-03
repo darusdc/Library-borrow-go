@@ -12,13 +12,24 @@ import (
 
 type bookStocksService struct {
 	bookStockRepository domain.BookStocksRepository
+	customerRepository  domain.CustomerRepository
 }
 
 // Borrow implements domain.BookStockService.
 func (b *bookStocksService) Borrow(ctx context.Context, bookId string, code string, borrowerId string) error {
-	persisted, err := b.bookStockRepository.FindByCode(ctx, code)
+	persisted, err := b.bookStockRepository.FindByCodeAndId(ctx, code, bookId)
 	if err != nil {
 		return err
+	}
+
+	user, err := b.customerRepository.FindById(ctx, borrowerId)
+
+	if err != nil {
+		return err
+	}
+
+	if user.Id == "" {
+		return errors.New("user not found")
 	}
 
 	persisted.Status = domain.STATUS_BORROWED
@@ -66,8 +77,8 @@ func (b *bookStocksService) DeleteByBookId(ctx context.Context, bookId string) e
 }
 
 // DeleteByCode implements domain.BookStockService.
-func (b *bookStocksService) DeleteByCode(ctx context.Context, code string) error {
-	existed, err := b.bookStockRepository.FindByCode(ctx, code)
+func (b *bookStocksService) DeleteByCodeAndId(ctx context.Context, code string, bookId string) error {
+	existed, err := b.bookStockRepository.FindByCodeAndId(ctx, code, bookId)
 	if err != nil {
 		return err
 	}
@@ -76,12 +87,12 @@ func (b *bookStocksService) DeleteByCode(ctx context.Context, code string) error
 		return errors.New("book not found")
 	}
 
-	return b.bookStockRepository.DeleteByCode(ctx, code)
+	return b.bookStockRepository.DeleteByCodeAndId(ctx, code, bookId)
 }
 
 // Returned implements domain.BookStockService.
-func (b *bookStocksService) Returned(ctx context.Context, bookId string, code string, borrowerId string) error {
-	persisted, err := b.bookStockRepository.FindByCode(ctx, code)
+func (b *bookStocksService) Returned(ctx context.Context, bookId string, code string) error {
+	persisted, err := b.bookStockRepository.FindByCodeAndId(ctx, code, bookId)
 	if err != nil {
 		return err
 	}
@@ -91,8 +102,9 @@ func (b *bookStocksService) Returned(ctx context.Context, bookId string, code st
 	return b.bookStockRepository.Update(ctx, &persisted)
 }
 
-func NewBookStockService(bookStockRepository domain.BookStocksRepository) domain.BookStockService {
+func NewBookStockService(bookStockRepository domain.BookStocksRepository, customerRepository domain.CustomerRepository) domain.BookStockService {
 	return &bookStocksService{
 		bookStockRepository: bookStockRepository,
+		customerRepository:  customerRepository,
 	}
 }

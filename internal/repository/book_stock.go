@@ -31,10 +31,10 @@ func (b *bookStocksRepository) DeleteByBookId(ctx context.Context, bookId string
 }
 
 // DeleteByCode implements domain.BookStocksRepository.
-func (b *bookStocksRepository) DeleteByCode(ctx context.Context, code string) error {
+func (b *bookStocksRepository) DeleteByCodeAndId(ctx context.Context, code string, bookId string) error {
 	executor := b.db.Update("book_stocks").
-		Where(goqu.C("code").
-			Eq(code)).Set(goqu.Record{
+		Where(goqu.C("code").Eq(code),
+			goqu.C("book_id").Eq(bookId)).Set(goqu.Record{
 		"status": domain.STATUS_DELETED,
 	}).Executor()
 	_, err := executor.ExecContext(ctx)
@@ -43,11 +43,11 @@ func (b *bookStocksRepository) DeleteByCode(ctx context.Context, code string) er
 }
 
 // FindByBookAndCode implements domain.BookStocksRepository.
-func (b *bookStocksRepository) FindByCode(ctx context.Context, code string) (bookStock domain.BookStocks, err error) {
+func (b *bookStocksRepository) FindByCodeAndId(ctx context.Context, code string, bookId string) (bookStock domain.BookStocks, err error) {
 	dataset := b.db.From("book_stocks").
-		Where(goqu.C("code").Eq(code), goqu.C("status").Neq(domain.STATUS_DELETED))
+		Where(goqu.C("code").Eq(code), goqu.C("book_id").Eq(bookId), goqu.C("status").Neq(domain.STATUS_DELETED))
 
-	err = dataset.ScanStructsContext(ctx, &bookStock)
+	_, err = dataset.ScanStructContext(ctx, &bookStock)
 	return
 }
 
@@ -76,6 +76,7 @@ func (b *bookStocksRepository) Save(context context.Context, data []domain.BookS
 func (b *bookStocksRepository) Update(ctx context.Context, bookStock *domain.BookStocks) error {
 	executor := b.db.Update("book_stocks").Where(
 		goqu.C("book_id").Eq(bookStock.BookId),
+		goqu.C("code").Eq(bookStock.Code),
 	).Set(bookStock).Executor()
 
 	_, err := executor.ExecContext(ctx)

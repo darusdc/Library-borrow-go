@@ -38,8 +38,7 @@ func (b *bookRepository) Delete(context context.Context, id string) error {
 // FindAll implements domain.BookRepository.
 func (b *bookRepository) FindAll(context context.Context) (books []domain.Book, err error) {
 	dataset := b.db.From("books").Where(goqu.C("deleted_at").IsNull())
-
-	err = dataset.ScanStructsContext(context, books)
+	err = dataset.ScanStructsContext(context, &books)
 	return
 }
 
@@ -50,7 +49,7 @@ func (b *bookRepository) FindById(context context.Context, id string) (book doma
 			goqu.C("id").Eq(id),
 		)
 
-	err = dataset.ScanStructsContext(context, &book)
+	_, err = dataset.ScanStructContext(context, &book)
 
 	return
 }

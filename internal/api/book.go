@@ -120,11 +120,6 @@ func (ba BookAPI) Delete(ctx *fiber.Ctx) error {
 	c, cancel := context.WithTimeout(ctx.Context(), 10*time.Second)
 	defer cancel()
 
-	var req dto.UpdateBookDataRequest
-	if err := ctx.BodyParser(&req); err != nil {
-		return ctx.Status(http.StatusUnprocessableEntity).JSON(dto.CreateResponseError(err.Error()))
-	}
-
 	id := ctx.Params("id")
 
 	err := ba.bookServices.Delete(c, id)

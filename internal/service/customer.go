@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/darusdc/belajar-go/domain"
@@ -23,7 +24,7 @@ func (cr *customerService) Show(ctx context.Context, id string) (dto.CustomerDat
 		return dto.CustomerData{}, err
 	}
 
-	if persisted.Id != "" {
+	if persisted.Id == "" {
 		return dto.CustomerData{}, errors.New("customer data isn't exist")
 	}
 
@@ -57,13 +58,17 @@ func (cr *customerService) Update(ctx context.Context, req dto.UpdateCustomerReq
 		return err
 	}
 
-	if persisted.Id != "" {
+	fmt.Println(persisted.Id)
+
+	if persisted.Id == "" {
 		return errors.New("customer data isn't exist")
 	}
 
 	persisted.Code = req.Code
 	persisted.Name = req.Name
 	persisted.UpdateAt = sql.NullTime{Valid: true, Time: time.Now()}
+
+	fmt.Println(persisted)
 
 	return cr.customerRepository.Update(ctx, &persisted)
 }

@@ -22,12 +22,29 @@ func NewBookStock(app *fiber.App,
 		bookStockService: bookStockService,
 	}
 
-	bookstockGroup := app.Group("/book/stock")
+	bookstockGroup := app.Group("/books/stock", auzMidd)
 
-	bookstockGroup.Post("/borrow/", auzMidd, bookStockAPI.BorrowBook)
-	bookstockGroup.Post("/return/", auzMidd, bookStockAPI.ReturnBook)
-	bookstockGroup.Delete("/id", auzMidd, bookStockAPI.DeleteBookStockById)
-	bookstockGroup.Delete("/code", auzMidd, bookStockAPI.DeleteBookStockByCode)
+	bookstockGroup.Get("/:id", bookStockAPI.StockBook)
+	bookstockGroup.Post("/borrow/", bookStockAPI.BorrowBook)
+	bookstockGroup.Post("/return/", bookStockAPI.ReturnBook)
+	bookstockGroup.Delete("/:id", bookStockAPI.DeleteBookStockById)
+	bookstockGroup.Delete("/:id/:code", bookStockAPI.DeleteBookStockByCode)
+
+}
+
+func (bookStockAPI BookStockAPI) StockBook(ctx *fiber.Ctx) error {
+	c, cancel := context.WithTimeout(ctx.Context(), 10*time.Second)
+	defer cancel()
+
+	id := ctx.Params("id")
+
+	res, err := bookStockAPI.bookStockService.CheckStock(c, id)
+
+	if err != nil {
+		ctx.Status(http.StatusInternalServerError).JSON(dto.CreateResponseError(err.Error()))
+	}
+
+	return ctx.Status(http.StatusAccepted).JSON(dto.CreateResponseSuccess(res))
 
 }
 
@@ -49,7 +66,7 @@ func (bookStockAPI BookStockAPI) BorrowBook(ctx *fiber.Ctx) error {
 	err := bookStockAPI.bookStockService.Borrow(c, req.BookId, req.Code, req.BorrowerId)
 
 	if err != nil {
-		ctx.Status(http.StatusInternalServerError).JSON(dto.CreateResponseError(err.Error()))
+		return ctx.Status(http.StatusInternalServerError).JSON(dto.CreateResponseError(err.Error()))
 	}
 
 	return ctx.Status(http.StatusAccepted).JSON(dto.CreateResponseSuccess(""))
@@ -71,10 +88,10 @@ func (bookStockAPI BookStockAPI) ReturnBook(ctx *fiber.Ctx) error {
 		return ctx.Status(http.StatusBadRequest).JSON(dto.CreateResponseErrorData("validation failed:", fails))
 	}
 
-	err := bookStockAPI.bookStockService.Returned(c, req.BookId, req.Code, req.BorrowerId)
+	err := bookStockAPI.bookStockService.Returned(c, req.BookId, req.Code)
 
 	if err != nil {
-		ctx.Status(http.StatusInternalServerError).JSON(dto.CreateResponseError(err.Error()))
+		return ctx.Status(http.StatusInternalServerError).JSON(dto.CreateResponseError(err.Error()))
 	}
 
 	return ctx.Status(http.StatusAccepted).JSON(dto.CreateResponseSuccess(""))
@@ -84,19 +101,9 @@ func (bookStockAPI BookStockAPI) ReturnBook(ctx *fiber.Ctx) error {
 func (bookStockAPI BookStockAPI) DeleteBookStockById(ctx *fiber.Ctx) error {
 	c, cancel := context.WithTimeout(ctx.Context(), 10*time.Second)
 	defer cancel()
-	var req dto.DeleteBookStocksByIdDataRequest
 
-	if err := ctx.BodyParser(&req); err != nil {
-		return ctx.SendStatus(http.StatusUnprocessableEntity)
-	}
-
-	fails := util.Validate(req)
-
-	if len(fails) > 0 {
-		return ctx.Status(http.StatusBadRequest).JSON(dto.CreateResponseErrorData("validation failed:", fails))
-	}
-
-	err := bookStockAPI.bookStockService.DeleteByBookId(c, req.BookId)
+	id := ctx.Params("id")
+	err := bookStockAPI.bookStockService.DeleteByBookId(c, id)
 
 	if err != nil {
 		ctx.Status(http.StatusInternalServerError).JSON(dto.CreateResponseError(err.Error()))
@@ -109,19 +116,10 @@ func (bookStockAPI BookStockAPI) DeleteBookStockById(ctx *fiber.Ctx) error {
 func (bookStockAPI BookStockAPI) DeleteBookStockByCode(ctx *fiber.Ctx) error {
 	c, cancel := context.WithTimeout(ctx.Context(), 10*time.Second)
 	defer cancel()
-	var req dto.DeleteBookStockByCodeDataRequest
 
-	if err := ctx.BodyParser(&req); err != nil {
-		return ctx.SendStatus(http.StatusUnprocessableEntity)
-	}
-
-	fails := util.Validate(req)
-
-	if len(fails) > 0 {
-		return ctx.Status(http.StatusBadRequest).JSON(dto.CreateResponseErrorData("validation failed:", fails))
-	}
-
-	err := bookStockAPI.bookStockService.DeleteByCode(c, req.BookId)
+	code := ctx.Params("code")
+	id := ctx.Params("id")
+	err := bookStockAPI.bookStockService.DeleteByCodeAndId(c, code, id)
 
 	if err != nil {
 		ctx.Status(http.StatusInternalServerError).JSON(dto.CreateResponseError(err.Error()))

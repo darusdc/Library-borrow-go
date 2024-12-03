@@ -25,17 +25,17 @@ type BookStocks struct {
 
 type BookStocksRepository interface {
 	FindByBookId(ctx context.Context, bookId string) ([]BookStocks, error)
-	FindByCode(ctx context.Context, code string) (BookStocks, error)
+	FindByCodeAndId(ctx context.Context, code string, bookId string) (BookStocks, error)
 	Save(context context.Context, data []BookStocks) error
 	Update(ctx context.Context, bookStock *BookStocks) error
 	DeleteByBookId(ctx context.Context, bookId string) error
-	DeleteByCode(ctx context.Context, code string) error
+	DeleteByCodeAndId(ctx context.Context, code string, bookId string) error
 }
 
 type BookStockService interface {
 	Borrow(ctx context.Context, bookId string, code string, borrowerId string) error
-	Returned(ctx context.Context, bookId string, code string, borrowerId string) error
+	Returned(ctx context.Context, bookId string, code string) error
 	CheckStock(ctx context.Context, bookId string) ([]dto.BookStocksData, error)
 	DeleteByBookId(ctx context.Context, bookId string) error
-	DeleteByCode(ctx context.Context, code string) error
+	DeleteByCodeAndId(ctx context.Context, code string, bookId string) error
 }
